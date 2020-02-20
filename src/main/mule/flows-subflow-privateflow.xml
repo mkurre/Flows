@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="e59440af-cdf5-4f55-8b15-8fa77c5d0202" basePath="/api" >
+		<http:request-connection protocol="HTTPS" host="cricapi.com" port="443" />
+	</http:request-config>
+	<flow name="PrivateFlow" doc:id="1833030b-d563-4810-a630-141f2b3d95e2" >
+		<http:request method="GET" doc:name="Request" doc:id="f4548a24-31a8-4c4c-aa6e-6825bfb08de0" config-ref="HTTP_Request_configuration" path="/matches">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"apikey" : "IHLeRh9D1DUUIRkaASMa7X11mtJ3"
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="d0ac87eb-019a-4489-b1ce-bf32b5544d65">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+data:payload.matches.*unique_id]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<sub-flow name="subflow" doc:id="324e6c9d-9b72-48f7-a6eb-a47995dad175" >
+		<set-variable value="#[payload]" doc:name="Set Variable" doc:id="1607629f-d1a6-4849-a43f-35a2eee95815" variableName="forpay" />
+		<ee:transform doc:name="Transform Message" doc:id="e6537868-d986-4936-a4bc-51e1de41e821" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+{
+	TestData:vars.forpay
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="92031c07-c9a8-4974-b306-89f45295c582" message='#[payload]'/>
+	</sub-flow>
+	<flow name="flows-subflow-privateflowFlow" doc:id="57e5a241-11e7-4190-a38b-78f1e0a89cce" >
+		<scheduler doc:name="Scheduler" doc:id="52fb8c6d-c0d2-44bb-9455-6351d12cd8d2" >
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</scheduler>
+		<set-payload value='#["tests": {
+        "50": "68",
+        "100": "51",
+        "St": "0",
+        "Ct": "115",
+        "6s": "69",
+        "4s": "",
+        "SR": "",
+        "BF": "",
+        "Ave": "53.78",
+        "HS": "248*",
+        "Runs": "15921",
+        "NO": "33",
+        "Inns": "329",
+        "Mat": "200"
+      }]' doc:name="Set Payload" doc:id="4d522509-d3e6-4453-a2e0-8d6a1e7a4325" />
+		<flow-ref doc:name="call subflow" doc:id="5a76785d-1589-4e2c-abef-578c25d22a91" name="subflow" />
+		<flow-ref doc:name="Flow Reference" doc:id="cb9ab9fd-3815-4da7-b504-9b337115dfe0" name="PrivateFlow" />
+		<logger level="INFO" doc:name="Logger" doc:id="05ee971a-ae85-4f6e-bdad-c68c3247a739" message="#[payload]"/>
+	</flow>
+</mule>
